@@ -152,8 +152,8 @@ button {
   color: var(--gold);
   font-family: var(--font-fraunces), serif;
   font-size: 16px;
-  font-style: italic;
-  transform: rotate(-2deg);
+  font-style: normal;
+  transform: none;
 }
 .name-input {
   width: 100%;
