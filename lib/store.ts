@@ -28,7 +28,7 @@ let mirror: MirrorState = {
   votesA: 0,
   votesB: 0,
   roundIndex: 0,
-  totalRounds: 10,
+  totalRounds: 15,
   playerName: null,
   updatedAt: Date.now(),
 };

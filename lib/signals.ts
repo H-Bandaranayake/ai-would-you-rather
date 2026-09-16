@@ -10,7 +10,7 @@ export const TRAIT_AXES = [
 
 /**
  * Tallies how often the player leaned toward each side of each trait axis,
- * across the 10 rounds, and renders it as short text for the AI prompt.
+ * across the 15 rounds, and renders it as short text for the AI prompt.
  * This is the deterministic "Layer 1" signal from the design doc -- the AI
  * only writes the prose on top of numbers we already computed in code.
  */
@@ -30,7 +30,8 @@ export function computeSignals(picks: Pick[]): string {
   return TRAIT_AXES.map((ax) => {
     const l = tally[ax.key][ax.left];
     const r = tally[ax.key][ax.right];
-    if (l === 0 && r === 0) return `${ax.left} vs ${ax.right}: not enough signal`;
+    if (l === 0 && r === 0)
+      return `${ax.left} vs ${ax.right}: not enough signal`;
     if (l === r) return `${ax.left} vs ${ax.right}: evenly split`;
     const winner = l > r ? ax.left : ax.right;
     return `${ax.left} vs ${ax.right}: leans ${winner} (${Math.max(l, r)}/${l + r})`;

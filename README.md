@@ -1,6 +1,6 @@
 # AI Would You Rather
 
-A festival-booth party game: enter your name, then 10 rounds of AI-generated
+A festival-booth party game: enter your name, then 15 rounds of safe, varied
 "Would You Rather" questions, then an AI-written personality read addressed
 to you by name. Built with Next.js (App Router) so it deploys to Vercel or
 runs on a laptop at the booth. Local fail-safes keep the game running when the
@@ -8,7 +8,7 @@ AI API or network is unavailable.
 
 ## What's included
 
-- **`/` — the game.** Name prompt → welcome → 10 rounds → personality
+- **`/` — the game.** Name prompt → welcome → 15 rounds → personality
   summary (with the player's name in it) → share / play again. Mobile-first,
   tap-only, one-handed, no login.
 - **`/mirror` — the projector view.** Shows the current player's name, the
@@ -82,7 +82,7 @@ will probably..."` and to use the name once in the read.
 - The summary card's eyebrow reads "{name}'s diagnosis," and the copied
   share text opens with `{name} is "{title}"`.
 - The name is also pushed to `/api/mirror` so the projector view can show
-  "{name} — Round X / 10" while they play.
+  "{name} — Round X / 15" while they play.
 
 ## Content safety
 
@@ -96,7 +96,7 @@ show up.
 
 ## Extending it
 
-- **"Roast your friend" mode**: reuse the same 10 questions, but pass a
+- **"Roast your friend" mode**: reuse the same 15 questions, but pass a
   second person's name into `/api/summary` and tweak the system prompt.
 - **Bigger leaderboard**: `lib/store.ts` currently returns the top 10
   titles; raise the `.slice(0, 10)` limit if you want more.
