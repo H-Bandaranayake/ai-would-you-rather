@@ -6,13 +6,13 @@ import { Pick, Summary } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-const SYSTEM = `You write short, funny, warm personality reads for a party game, like a friend who's known the player for years -- witty and a little roast-y, never mean, never commenting on protected traits (race, gender, religion, disability, etc). Respond with ONLY a raw JSON object, no markdown fences, no commentary.`;
+const SYSTEM = `Write a short, warm, funny personality result for OUSL Open Day 2026. Use very simple English for a wide audience. Be playful, never rude, scary, adult, political, or personal. Never mention protected or sensitive traits. Return only raw JSON.`;
 
 function fallbackSummary(name: string): Summary {
   return {
     title: "The Unpredictable Wildcard",
-    read: `You made it through ten impossible choices without flinching once, which honestly says more than any AI could, ${name}. Consistent chaos, chosen on purpose -- that's a personality type of its own.`,
-    prediction: `${name}, you will probably make a decision this week that surprises exactly no one who knows you.`,
+    read: `You made fifteen difficult choices with a clear style, ${name}. You enjoy fun ideas, but you also know what works for you.`,
+    prediction: `${name}, you will probably turn one ordinary moment this week into a story worth sharing.`,
   };
 }
 
@@ -44,10 +44,16 @@ ${list}
 Detected tendencies:
 ${signals}
 
+Write a result that feels specific to these choices, not a generic horoscope.
+Use the strongest two or three detected tendencies and mention one or two concrete choice themes from the list.
+Make it accurate to the evidence, funny in a kind way, and appealing to share with friends.
+Use simple English that children, students, and adults can understand.
+Keep everything safe for work: no insults, adult topics, fear, violence, politics, religion, medical claims, or comments about identity or protected traits.
+
 Write:
-- title: a fake diagnosis, 2-5 words, starting with "The" (e.g. "The Chaotic Strategist")
-- read: 2-3 playful sentences about them based on the pattern of choices. You may use their name once, naturally.
-- prediction: one short funny sentence addressed directly to them by name, starting with "${username}, you will probably..."
+- title: a catchy, playful label, 2-5 simple words, starting with "The". Do not use the words "diagnosis" or "personality disorder".
+- read: 2-3 short, friendly sentences based on the detected tendencies and choices. Use the player's name once. Do not claim facts about their real life.
+- prediction: one short, funny but positive sentence addressed to them by name, starting with "${username}, you will probably..."
 
 Return this exact JSON object shape: {"title":"...", "read":"...", "prediction":"..."}`;
 

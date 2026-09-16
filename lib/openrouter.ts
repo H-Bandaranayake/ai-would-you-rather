@@ -18,6 +18,8 @@ export async function callOpenRouter(
     throw new Error("Missing OPENROUTER_API_KEY environment variable");
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7000);
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -35,7 +37,9 @@ export async function callOpenRouter(
       reasoning: { effort: "none" },
       stream: false,
     }),
+    signal: controller.signal,
   });
+  clearTimeout(timeout);
 
   if (!res.ok) {
     const errText = await res.text();

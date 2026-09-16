@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { Download, Loader2, RotateCcw, Share2, WifiOff } from "lucide-react";
+import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
+import { Download, RotateCcw, Share2, WifiOff } from "lucide-react";
 import ProgressDots from "./components/ProgressDots";
+import { pickFallbackQuestions } from "@/lib/fallbackQuestions";
+import loadingGif from "@/lib/loading.gif";
+import ouslLogo from "@/lib/logo.png";
 import { Pick, Question, Summary } from "@/lib/types";
 
 type Screen = "welcome" | "loading" | "question" | "scoring" | "summary";
@@ -28,6 +32,49 @@ function wrapCanvasText(
   return lines;
 }
 
+function drawCanvasLines(
+  context: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight: number,
+) {
+  lines.forEach((line, index) =>
+    context.fillText(line, x, y + index * lineHeight),
+  );
+}
+
+function drawContainedImage(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const scale = Math.min(
+    width / image.naturalWidth,
+    height / image.naturalHeight,
+  );
+  const drawWidth = image.naturalWidth * scale;
+  const drawHeight = image.naturalHeight * scale;
+  context.drawImage(
+    image,
+    x + (width - drawWidth) / 2,
+    y + (height - drawHeight) / 2,
+    drawWidth,
+    drawHeight,
+  );
+}
+
+function createDownloadName(name: string) {
+  const safeName = name
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "");
+  return `ousl-open-day-2026-${safeName || "player"}.png`;
+}
+
 async function createShareCard(name: string, summary: Summary): Promise<Blob> {
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
@@ -41,63 +88,92 @@ async function createShareCard(name: string, summary: Summary): Promise<Blob> {
   context.fillStyle = background;
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  context.fillStyle = "rgba(215, 241, 113, 0.18)";
+  try {
+    const logoImage = new window.Image();
+    logoImage.src = ouslLogo.src;
+    await logoImage.decode();
+    context.save();
+    context.fillStyle = "#183f39";
+    context.beginPath();
+    context.arc(865, 150, 118, 0, Math.PI * 2);
+    context.fill();
+    context.beginPath();
+    context.arc(865, 150, 92, 0, Math.PI * 2);
+    context.clip();
+    drawContainedImage(context, logoImage, 773, 58, 184, 184);
+    context.restore();
+  } catch {
+    // Keep the text branding if a browser blocks image decoding.
+  }
+
+  context.fillStyle = "rgba(215, 241, 113, 0.14)";
   context.beginPath();
-  context.arc(900, 155, 210, 0, Math.PI * 2);
+  context.arc(890, 155, 150, 0, Math.PI * 2);
   context.fill();
   context.fillStyle = "rgba(255, 107, 87, 0.18)";
   context.beginPath();
-  context.arc(120, 1190, 170, 0, Math.PI * 2);
+  context.arc(125, 1165, 105, 0, Math.PI * 2);
   context.fill();
 
   context.fillStyle = "#d7f171";
-  context.font = "700 25px 'Arial'";
+  context.font = "700 25px Arial";
   context.letterSpacing = "3px";
-  context.fillText("OUSL OPEN DAY 2026", 80, 100);
+  context.fillText("OUSL OPEN DAY 2026", 80, 95);
   context.letterSpacing = "0px";
 
   context.fillStyle = "#fbf3e7";
-  context.font = "600 72px Georgia";
-  context.fillText("would you", 80, 220);
+  context.font = "600 68px Georgia";
+  context.fillText("would you", 80, 200);
   context.fillStyle = "#ffc857";
-  context.font = "italic 78px Georgia";
-  context.fillText("rather?", 80, 300);
+  context.font = "italic 74px Georgia";
+  context.fillText("rather?", 80, 275);
 
   context.fillStyle = "#192741";
-  context.roundRect(60, 385, 960, 790, 36);
+  context.roundRect(60, 350, 960, 780, 36);
   context.fill();
+  context.fillStyle = "#ff6b57";
+  context.fillRect(105, 405, 70, 7);
   context.fillStyle = "#aab8d2";
   context.font = "500 28px Arial";
-  context.fillText(`${name}'s AI personality read`, 105, 465);
+  context.fillText(`${name}'s AI personality read`, 105, 470);
 
   context.fillStyle = "#ffc857";
-  context.font = "italic 600 58px Georgia";
-  const titleLines = wrapCanvasText(context, summary.title, 820);
-  titleLines.forEach((line, index) =>
-    context.fillText(line, 105, 570 + index * 68),
-  );
+  context.font = "italic 600 56px Georgia";
+  const titleLines = wrapCanvasText(context, summary.title, 790).slice(0, 2);
+  drawCanvasLines(context, titleLines, 105, 575, 66);
 
   const titleHeight = titleLines.length * 68;
   context.fillStyle = "#fbf3e7";
-  context.font = "400 30px Arial";
-  const readLines = wrapCanvasText(context, summary.read, 820);
-  readLines.forEach((line, index) =>
-    context.fillText(line, 105, 665 + titleHeight + index * 44),
-  );
+  context.font = "400 29px Arial";
+  const readLines = wrapCanvasText(context, summary.read, 820).slice(0, 4);
+  const readY = 690 + titleHeight;
+  drawCanvasLines(context, readLines, 105, readY, 43);
 
-  const predictionY = 665 + titleHeight + readLines.length * 44 + 42;
+  const predictionY = readY + readLines.length * 43 + 46;
   context.fillStyle = "#ff6b57";
-  context.fillRect(105, predictionY - 28, 6, 116);
+  context.fillRect(105, predictionY - 28, 6, 112);
   context.fillStyle = "#aab8d2";
   context.font = "500 27px Arial";
-  const predictionLines = wrapCanvasText(context, summary.prediction, 790);
-  predictionLines.forEach((line, index) =>
-    context.fillText(line, 135, predictionY + index * 40),
-  );
+  const predictionLines = wrapCanvasText(
+    context,
+    summary.prediction,
+    790,
+  ).slice(0, 3);
+  drawCanvasLines(context, predictionLines, 135, predictionY, 40);
 
+  context.fillStyle = "#fbf3e7";
+  context.font = "600 22px Arial";
+  context.fillText("Thanks for playing!", 80, 1160);
+  context.fillStyle = "#aab8d2";
+  context.font = "400 19px Arial";
+  context.fillText("Department of Computer Science", 80, 1190);
+  context.fillText("Faculty of Natural Sciences", 80, 1217);
   context.fillStyle = "#3fbfad";
   context.font = "700 24px Arial";
-  context.fillText("MAKE YOUR CHOICE. GET YOUR READ.", 80, 1270);
+  context.fillText("MAKE YOUR CHOICE. GET YOUR READ.", 80, 1260);
+  context.fillStyle = "rgba(251, 243, 231, 0.52)";
+  context.font = "400 16px Arial";
+  context.fillText("*Response is AI generated", 80, 1320);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -119,6 +195,23 @@ export default function GamePage() {
   const [resolvedName, setResolvedName] = useState("");
   const [timesSeenToday, setTimesSeenToday] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const loadingMessages = [
+    "Checking your choices...",
+    "Finding your strongest patterns...",
+    "Writing your simple result...",
+  ];
+
+  useEffect(() => {
+    if (screen !== "scoring") {
+      setLoadingStep(0);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setLoadingStep((step) => (step + 1) % loadingMessages.length);
+    }, 1200);
+    return () => window.clearInterval(id);
+  }, [screen, loadingMessages.length]);
 
   // Fire-and-forget updates to the projector mirror view. If nobody is
   // watching /mirror, or the fetch fails, the game itself is unaffected.
@@ -132,28 +225,35 @@ export default function GamePage() {
 
   const startGame = useCallback(async () => {
     const name = username.trim() || "Player One";
-    setScreen("loading");
-    try {
-      const res = await fetch("/api/questions", { method: "POST" });
-      const data = await res.json();
-      const qs: Question[] = data.questions;
-      setQuestions(qs);
-      setUsingFallback(!!data.usingFallback);
-      setIndex(0);
-      setPicks([]);
-      pushMirror({
-        type: "question",
-        category: qs[0].category,
-        optionA: qs[0].optionA.text,
-        optionB: qs[0].optionB.text,
-        roundIndex: 1,
-        totalRounds: qs.length,
-        playerName: name,
-      });
-      setScreen("question");
-    } catch (err) {
-      setScreen("welcome");
-    }
+    const recentKeys = JSON.parse(
+      sessionStorage.getItem("ousl-recent-questions") || "[]",
+    ) as string[];
+    let qs = pickFallbackQuestions(15, recentKeys);
+    if (qs.length < 15) qs = pickFallbackQuestions(15);
+    const keys = qs.map((question) =>
+      [question.optionA.text, question.optionB.text]
+        .map((text) => text.trim().toLowerCase())
+        .sort()
+        .join("|"),
+    );
+    sessionStorage.setItem(
+      "ousl-recent-questions",
+      JSON.stringify([...keys, ...recentKeys].slice(0, 36)),
+    );
+    setQuestions(qs);
+    setUsingFallback(true);
+    setIndex(0);
+    setPicks([]);
+    pushMirror({
+      type: "question",
+      category: qs[0].category,
+      optionA: qs[0].optionA.text,
+      optionB: qs[0].optionB.text,
+      roundIndex: 1,
+      totalRounds: qs.length,
+      playerName: name,
+    });
+    setScreen("question");
   }, [pushMirror, username]);
 
   const finish = useCallback(
@@ -173,8 +273,8 @@ export default function GamePage() {
       } catch (err) {
         setSummary({
           title: "The Unpredictable Wildcard",
-          read: `You made it through ten impossible choices without flinching once, ${name}. Consistent chaos, chosen on purpose -- that's a personality type of its own.`,
-          prediction: `${name}, you will probably surprise exactly no one who knows you this week.`,
+          read: `You made it through fifteen fun choices with a style that is completely your own, ${name}. You balance curiosity with a clear sense of what feels right for you.`,
+          prediction: `${name}, you will probably turn one ordinary moment this week into a story worth sharing.`,
         });
         setResolvedName(name);
         setTimesSeenToday(null);
@@ -207,6 +307,7 @@ export default function GamePage() {
       }
       setIndex(nextIndex);
       const nq = questions[nextIndex];
+      const name = username.trim() || "Player One";
       pushMirror({
         type: "question",
         category: nq.category,
@@ -214,9 +315,10 @@ export default function GamePage() {
         optionB: nq.optionB.text,
         roundIndex: nextIndex + 1,
         totalRounds: questions.length,
+        playerName: name,
       });
     },
-    [index, picks, questions, pushMirror, finish],
+    [index, picks, questions, pushMirror, finish, username],
   );
 
   const playAgain = () => {
@@ -231,7 +333,7 @@ export default function GamePage() {
     const shareText = `${resolvedName} is "${summary.title}"\n\n${summary.read}\n\n${summary.prediction}\n\nOUSL Open Day 2026`;
     try {
       const blob = await createShareCard(resolvedName, summary);
-      const file = new File([blob], "ousl-open-day-2026-personality.png", {
+      const file = new File([blob], createDownloadName(resolvedName), {
         type: "image/png",
       });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
@@ -256,7 +358,7 @@ export default function GamePage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "ousl-open-day-2026-personality.png";
+    link.download = createDownloadName(resolvedName);
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -266,8 +368,17 @@ export default function GamePage() {
       {screen === "welcome" && (
         <div className="welcome">
           <div className="booth-kicker">
-            <span /> Open University of Sri Lanka - Open Day 2026
+            <span /> Open University of Sri Lanka
             <span />
+          </div>
+          <div className="ousl-logo" aria-label="Open University of Sri Lanka">
+            <Image
+              className="ousl-logo-image"
+              src={ouslLogo}
+              alt="Open University of Sri Lanka crest"
+              priority
+            />
+            <div className="ousl-logo-text">OPEN DAY 2026</div>
           </div>
           <div className="mark">
             would you
@@ -278,8 +389,8 @@ export default function GamePage() {
             A tiny personality experiment with very big opinions.
           </div>
           <div className="sub">
-            Ten impossible choices. No wrong answers. Get your AI personality
-            read at the end.
+            Fifteen fun choices. No wrong answers. Get a simple AI personality
+            result at the end.
           </div>
           <input
             className="name-input"
@@ -293,20 +404,27 @@ export default function GamePage() {
             }}
           />
           <div className="rules">
-            <span className="pill">10 rounds</span>
-            <span className="pill">~90 sec</span>
+            <span className="pill">15 rounds</span>
+            <span className="pill">~2 min</span>
             <span className="pill">no login</span>
           </div>
           <button className="start-btn" onClick={startGame}>
-            Enter the chaos <span aria-hidden="true">-&gt;</span>
+            Start the game <span aria-hidden="true">-&gt;</span>
           </button>
         </div>
       )}
 
       {screen === "loading" && (
         <div className="loading">
-          <Loader2 className="spin" size={30} />
-          <div>Cooking up your questions…</div>
+          <Image
+            className="loading-gif"
+            src={loadingGif}
+            alt=""
+            width={86}
+            height={86}
+            unoptimized
+          />
+          <div>Preparing your questions...</div>
         </div>
       )}
 
@@ -328,7 +446,7 @@ export default function GamePage() {
           {usingFallback && (
             <div className="offline-tag">
               <WifiOff size={13} />
-              <span>Playing from the local question set</span>
+              <span>Safe question deck ready instantly</span>
             </div>
           )}
         </>
@@ -336,28 +454,61 @@ export default function GamePage() {
 
       {screen === "scoring" && (
         <div className="loading">
-          <Loader2 className="spin" size={30} />
-          <div>Reading your pattern of choices…</div>
+          <Image
+            className="loading-gif"
+            src={loadingGif}
+            alt=""
+            width={86}
+            height={86}
+            unoptimized
+          />
+          <div className="loading-message" aria-live="polite">
+            {loadingMessages[loadingStep]}
+          </div>
+          <div className="loading-dots" aria-hidden="true">
+            {loadingMessages.map((_, step) => (
+              <span
+                key={step}
+                className={step === loadingStep ? "active" : ""}
+              />
+            ))}
+          </div>
         </div>
       )}
 
       {screen === "summary" && summary && (
         <div className="summary-wrap">
           <div className="card">
+            <div className="summary-logo-badge" aria-hidden="true">
+              <Image src={ouslLogo} alt="" fill sizes="86px" />
+            </div>
             <div className="card-brand">
-              OUSL OPEN DAY 2026 <span>AI ARCADE</span>
+              <span className="card-brand-main">
+                <Image className="mini-logo" src={ouslLogo} alt="OUSL crest" />{" "}
+                OUSL OPEN DAY 2026
+              </span>
+              <span>AI ARCADE</span>
             </div>
             <div className="eyebrow">
-              {resolvedName}&rsquo;s diagnosis
-              {timesSeenToday ? ` — seen ${timesSeenToday}x today` : ""}
+              {resolvedName}&rsquo;s result
+              {timesSeenToday
+                ? ` - result seen ${timesSeenToday} times today`
+                : ""}
             </div>
             <div className="title">{summary.title}</div>
             <div className="read">{summary.read}</div>
             <div className="prediction">{summary.prediction}</div>
+            <div className="event-note">
+              <strong>Thanks for playing!</strong>
+              <span>Department of Computer Science</span>
+              <span>Faculty of Natural Sciences</span>
+              <span>OUSL Open Day 2026</span>
+            </div>
+            <div className="ai-disclosure">*Response is AI generated</div>
           </div>
           <div className="actions">
             <button className="action-btn share" onClick={handleShare}>
-              <Share2 size={16} /> Share card
+              <Share2 size={16} /> Share result
             </button>
             <button className="action-btn download" onClick={handleDownload}>
               <Download size={16} /> Download PNG

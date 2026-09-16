@@ -17,13 +17,20 @@ const grotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: "Would You Rather — AI Personality Booth",
-  description: "Ten impossible choices. No wrong answers. Get your AI personality read at the end.",
+  description:
+    "Fifteen fun choices. No wrong answers. Get your simple AI personality result at the end.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
-      <body className={`${fraunces.variable} ${grotesk.variable}`}>{children}</body>
+      <body className={`${fraunces.variable} ${grotesk.variable}`}>
+        {children}
+      </body>
     </html>
   );
 }
