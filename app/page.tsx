@@ -260,22 +260,35 @@ export default function GamePage() {
     async (finalPicks: Pick[]) => {
       const name = username.trim() || "Player One";
       setScreen("scoring");
+      const localSummary: Summary = {
+        title: "The Unpredictable Wildcard",
+        read: `You made it through fifteen fun choices with a style that is completely your own, ${name}. You balance curiosity with a clear sense of what feels right for you.`,
+        prediction: `${name}, you will probably turn one ordinary moment this week into a story worth sharing.`,
+      };
       try {
         const res = await fetch("/api/summary", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ picks: finalPicks, username: name }),
+          cache: "no-store",
         });
+        if (!res.ok) throw new Error(`Summary request failed: ${res.status}`);
         const data = await res.json();
-        setSummary(data.summary);
-        setResolvedName(data.username || name);
+        if (
+          !data?.summary ||
+          typeof data.summary.title !== "string" ||
+          typeof data.summary.read !== "string" ||
+          typeof data.summary.prediction !== "string"
+        ) {
+          throw new Error("Summary response was incomplete");
+        }
+        setSummary(data.summary as Summary);
+        setResolvedName(
+          typeof data.username === "string" ? data.username : name,
+        );
         setTimesSeenToday(data.timesSeenToday ?? null);
       } catch (err) {
-        setSummary({
-          title: "The Unpredictable Wildcard",
-          read: `You made it through fifteen fun choices with a style that is completely your own, ${name}. You balance curiosity with a clear sense of what feels right for you.`,
-          prediction: `${name}, you will probably turn one ordinary moment this week into a story worth sharing.`,
-        });
+        setSummary(localSummary);
         setResolvedName(name);
         setTimesSeenToday(null);
       }
