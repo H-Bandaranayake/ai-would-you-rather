@@ -12,6 +12,7 @@ const MODEL = "nvidia/nemotron-3.5-lightning:free";
 export async function callOpenRouter(
   system: string,
   user: string,
+  timeoutMs = 7000,
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -19,7 +20,7 @@ export async function callOpenRouter(
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 7000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {

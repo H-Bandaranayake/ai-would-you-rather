@@ -4,6 +4,7 @@ import { pickFallbackQuestions } from "@/lib/fallbackQuestions";
 import { Question } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const SYSTEM = `Write safe, funny "Would You Rather" questions for OUSL Open Day 2026. Use simple English that a wide audience can understand. Both choices should be interesting, with no clear winner. Keep each choice under 12 words. No violence, gore, adult content, insults, politics, religion, or sensitive personal topics. Tag each choice with 1-2 traits from this exact list: chaos, comfort, social, solitary, power, peace, logic, vibes, shortterm, longterm. Return only raw JSON.`;
 

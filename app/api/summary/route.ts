@@ -6,6 +6,7 @@ import { Pick, Summary } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const maxDuration = 10;
 
 const SYSTEM = `Write a short, warm, funny personality result for OUSL Open Day 2026. Use very simple English for a wide audience. Be playful, never rude, scary, adult, political, or personal. Never mention protected or sensitive traits. Return only raw JSON.`;
 
@@ -60,10 +61,17 @@ Return this exact JSON object shape: {"title":"...", "read":"...", "prediction":
 
   let summary: Summary;
   try {
-    const text = await callOpenRouter(SYSTEM, user);
+    const text = await callOpenRouter(SYSTEM, user, 9000);
     const parsed = extractJSON(text);
     summary = Array.isArray(parsed) ? parsed[0] : parsed;
-    if (!summary?.title || !summary?.read || !summary?.prediction)
+    if (
+      typeof summary?.title !== "string" ||
+      typeof summary?.read !== "string" ||
+      typeof summary?.prediction !== "string" ||
+      !summary.title.trim() ||
+      !summary.read.trim() ||
+      !summary.prediction.trim()
+    )
       throw new Error("incomplete summary");
   } catch (err) {
     summary = fallbackSummary(username);

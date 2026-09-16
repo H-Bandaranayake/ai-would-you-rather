@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, RotateCcw, Share2, WifiOff } from "lucide-react";
 import ProgressDots from "./components/ProgressDots";
 import { pickFallbackQuestions } from "@/lib/fallbackQuestions";
@@ -195,6 +195,8 @@ export default function GamePage() {
   const [resolvedName, setResolvedName] = useState("");
   const [timesSeenToday, setTimesSeenToday] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [aiQuestions, setAiQuestions] = useState<Question[] | null>(null);
+  const aiPrefetchStarted = useRef(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const loadingMessages = [
     "Checking your choices...",
@@ -213,6 +215,37 @@ export default function GamePage() {
     return () => window.clearInterval(id);
   }, [screen, loadingMessages.length]);
 
+  useEffect(() => {
+    if (aiPrefetchStarted.current) return;
+    aiPrefetchStarted.current = true;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 7500);
+
+    fetch("/api/questions", {
+      method: "POST",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`Question request failed: ${res.status}`);
+        const data = await res.json();
+        if (
+          !data?.usingFallback &&
+          Array.isArray(data.questions) &&
+          data.questions.length >= 15
+        ) {
+          setAiQuestions(data.questions as Question[]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => window.clearTimeout(timeout));
+
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, []);
+
   // Fire-and-forget updates to the projector mirror view. If nobody is
   // watching /mirror, or the fetch fails, the game itself is unaffected.
   const pushMirror = useCallback((payload: Record<string, unknown>) => {
@@ -228,8 +261,11 @@ export default function GamePage() {
     const recentKeys = JSON.parse(
       sessionStorage.getItem("ousl-recent-questions") || "[]",
     ) as string[];
-    let qs = pickFallbackQuestions(15, recentKeys);
-    if (qs.length < 15) qs = pickFallbackQuestions(15);
+    let qs = aiQuestions;
+    if (!qs) {
+      qs = pickFallbackQuestions(15, recentKeys);
+      if (qs.length < 15) qs = pickFallbackQuestions(15);
+    }
     const keys = qs.map((question) =>
       [question.optionA.text, question.optionB.text]
         .map((text) => text.trim().toLowerCase())
@@ -241,7 +277,7 @@ export default function GamePage() {
       JSON.stringify([...keys, ...recentKeys].slice(0, 36)),
     );
     setQuestions(qs);
-    setUsingFallback(true);
+    setUsingFallback(!aiQuestions);
     setIndex(0);
     setPicks([]);
     pushMirror({
@@ -254,7 +290,7 @@ export default function GamePage() {
       playerName: name,
     });
     setScreen("question");
-  }, [pushMirror, username]);
+  }, [aiQuestions, pushMirror, username]);
 
   const finish = useCallback(
     async (finalPicks: Pick[]) => {
