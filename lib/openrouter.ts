@@ -1,4 +1,4 @@
-const MODEL = "nvidia/nemotron-3.5-lightning:free";
+export const OPENROUTER_MODEL = "nvidia/nemotron-3.5-lightning:free";
 
 /**
  * Calls the OpenRouter chat completions API from the server (API route), using
@@ -32,7 +32,7 @@ export async function callOpenRouter(
       "X-Title": "OUSL Open Day 2026 Would You Rather",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: OPENROUTER_MODEL,
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
