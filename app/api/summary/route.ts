@@ -6,7 +6,7 @@ import { Pick, Summary } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 10;
+export const maxDuration = 60;
 
 const SYSTEM = `Write a short, warm, funny personality result for OUSL Open Day 2026. Use very simple English for a wide audience. Be playful, never rude, scary, adult, political, or personal. Never mention protected or sensitive traits. Return only raw JSON.`;
 
@@ -60,8 +60,9 @@ Write:
 Return this exact JSON object shape: {"title":"...", "read":"...", "prediction":"..."}`;
 
   let summary: Summary;
+  let source: "ai" | "fallback" = "ai";
   try {
-    const text = await callOpenRouter(SYSTEM, user, 9000);
+    const text = await callOpenRouter(SYSTEM, user, 25000);
     const parsed = extractJSON(text);
     summary = Array.isArray(parsed) ? parsed[0] : parsed;
     if (
@@ -74,6 +75,8 @@ Return this exact JSON object shape: {"title":"...", "read":"...", "prediction":
     )
       throw new Error("incomplete summary");
   } catch (err) {
+    source = "fallback";
+    console.error("Summary AI generation failed:", err);
     summary = fallbackSummary(username);
   }
 
@@ -81,5 +84,5 @@ Return this exact JSON object shape: {"title":"...", "read":"...", "prediction":
   const timesSeenToday =
     getLeaderboard().find((e) => e.title === summary.title)?.count ?? 1;
 
-  return NextResponse.json({ summary, username, timesSeenToday });
+  return NextResponse.json({ summary, username, timesSeenToday, source });
 }

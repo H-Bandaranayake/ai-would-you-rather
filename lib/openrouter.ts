@@ -26,6 +26,10 @@ export async function callOpenRouter(
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
+      "HTTP-Referer":
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        "https://ousl-open-day-2026.vercel.app",
+      "X-Title": "OUSL Open Day 2026 Would You Rather",
     },
     body: JSON.stringify({
       model: MODEL,

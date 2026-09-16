@@ -323,6 +323,9 @@ export default function GamePage() {
           typeof data.username === "string" ? data.username : name,
         );
         setTimesSeenToday(data.timesSeenToday ?? null);
+        if (data.source === "fallback") {
+          console.warn("The summary API used its safe fallback result.");
+        }
       } catch (err) {
         setSummary(localSummary);
         setResolvedName(name);
