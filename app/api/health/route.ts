@@ -3,7 +3,7 @@ import { OPENROUTER_MODEL } from "@/lib/openrouter";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 10;
 
 function headers(apiKey: string): HeadersInit {
   return {
@@ -64,7 +64,7 @@ export async function GET(req: Request) {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
+    const timeout = setTimeout(() => controller.abort(), 8500);
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {

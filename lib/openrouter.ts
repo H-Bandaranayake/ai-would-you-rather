@@ -13,6 +13,7 @@ export async function callOpenRouter(
   system: string,
   user: string,
   timeoutMs = 7000,
+  maxTokens = 1200,
 ): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -38,7 +39,7 @@ export async function callOpenRouter(
         { role: "user", content: user },
       ],
       temperature: 0.9,
-      max_tokens: 1200,
+      max_tokens: maxTokens,
       reasoning: { effort: "none" },
       stream: false,
     }),
