@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { callDeepSeek, extractJSON } from "@/lib/deepseek";
+import { callOpenRouter, extractJSON } from "@/lib/openrouter";
 import { FALLBACK_QUESTIONS, shuffle } from "@/lib/fallbackQuestions";
 import { Question } from "@/lib/types";
 
@@ -12,7 +12,7 @@ const USER = `Generate exactly 10 "Would You Rather" questions. Vary the categor
 
 export async function POST() {
   try {
-    const text = await callDeepSeek(SYSTEM, USER);
+    const text = await callOpenRouter(SYSTEM, USER);
     const parsed = extractJSON(text);
     const questions: Question[] = Array.isArray(parsed)
       ? parsed

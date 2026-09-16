@@ -14,11 +14,13 @@ AI API or network is unavailable.
 - **`/mirror` — the projector view.** Shows the current player's name, the
   live question, a real-time vote split as people answer, a QR code to
   join, and a leaderboard of the most common personality titles seen today.
-- **`/api/questions`** — generates a fresh batch of 10 tagged questions per
-  session via DeepSeek, then falls back to a hand-written local pool if the
+- **`/api/questions`** — requests a fresh batch of 10 tagged questions per
+  session through OpenRouter's free NVIDIA Nemotron 3.5 Lightning model, then
+  falls back to a hand-written local pool if the
   call fails or returns malformed data.
 - **`/api/summary`** — computes deterministic signal tallies from the session's
-  choices, then asks DeepSeek to write the personality read. It uses a local
+  choices, then asks the configured OpenRouter generation model to write the personality
+  read. It uses a local
   summary if the AI call fails.
 - **`/api/mirror`** — shared state the game page pushes to and the
   projector page polls, so the big screen mirrors whatever the current
@@ -34,10 +36,10 @@ npm run dev
 Open `http://localhost:3000` for the game and `http://localhost:3000/mirror`
 for the projector view (open that one on the booth's second screen).
 
-### Getting a DeepSeek API key
+### Getting an OpenRouter API key
 
-Create an account and API key at [platform.deepseek.com](https://platform.deepseek.com/),
-then put it in `.env.local` as `DEEPSEEK_API_KEY`. The app falls back locally
+Create an account and API key at [openrouter.ai/keys](https://openrouter.ai/keys),
+then put it in `.env.local` as `OPENROUTER_API_KEY`. The app falls back locally
 when the key is missing or the API is unavailable.
 
 ## Deploying
@@ -48,7 +50,7 @@ when the key is missing or the API is unavailable.
 vercel deploy
 ```
 
-Set `DEEPSEEK_API_KEY` in the Vercel project's Environment Variables. The
+Set `OPENROUTER_API_KEY` in the Vercel project's Environment Variables. The
 mirror/leaderboard state in `lib/store.ts` lives in server memory. On serverless functions, requests can
 land on different warm instances, so the projector view may occasionally
 miss an update or the leaderboard may not perfectly match every session.
@@ -75,7 +77,7 @@ on `/mirror` will pick that up automatically since it encodes
 - On the welcome screen, the player types a name into `.name-input`
   (defaults to "Player One" if left blank).
 - The name is sent to `/api/summary` alongside the 10 picks, and the prompt
-  there explicitly asks DeepSeek to open the prediction with `"{name}, you
+  there explicitly asks the model to open the prediction with `"{name}, you
 will probably..."` and to use the name once in the read.
 - The summary card's eyebrow reads "{name}'s diagnosis," and the copied
   share text opens with `{name} is "{title}"`.
@@ -101,7 +103,3 @@ show up.
 - **Share card as an image**: the game currently copies share text to the
   clipboard. For a shareable image, render the `.card` element to canvas
   with `html2canvas` and offer it as a download from the summary screen.
-- **Reasoning model**: DeepSeek also offers `deepseek-reasoner` (R1) for
-  more deliberate output, but it doesn't support the `response_format`
-  JSON mode used here, so switching would mean relying on
-  `extractJSON`'s fence-stripping fallback instead.

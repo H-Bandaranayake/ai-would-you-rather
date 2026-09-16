@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { callDeepSeek, extractJSON } from "@/lib/deepseek";
+import { callOpenRouter, extractJSON } from "@/lib/openrouter";
 import { computeSignals } from "@/lib/signals";
 import { recordTitle, getLeaderboard } from "@/lib/store";
 import { Pick, Summary } from "@/lib/types";
@@ -53,7 +53,7 @@ Return this exact JSON object shape: {"title":"...", "read":"...", "prediction":
 
   let summary: Summary;
   try {
-    const text = await callDeepSeek(SYSTEM, user);
+    const text = await callOpenRouter(SYSTEM, user);
     const parsed = extractJSON(text);
     summary = Array.isArray(parsed) ? parsed[0] : parsed;
     if (!summary?.title || !summary?.read || !summary?.prediction)
