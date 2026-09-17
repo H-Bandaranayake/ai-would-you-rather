@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, RotateCcw, Share2, WifiOff } from "lucide-react";
+import { ArrowRight, CalendarDays, Download, RotateCcw, Share2, Sparkles, UserRound, WifiOff } from "lucide-react";
 import ProgressDots from "./components/ProgressDots";
 import { pickFallbackQuestions } from "@/lib/fallbackQuestions";
 import loadingGif from "@/lib/loading.gif";
@@ -77,109 +77,208 @@ function createDownloadName(name: string) {
 
 async function createShareCard(name: string, summary: Summary): Promise<Blob> {
   const canvas = document.createElement("canvas");
-  canvas.width = 1080;
-  canvas.height = 1350;
+  canvas.width = 1200;
+  canvas.height = 1500;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas is unavailable");
 
-  const background = context.createLinearGradient(0, 0, 1080, 1350);
-  background.addColorStop(0, "#111a2e");
-  background.addColorStop(1, "#24395b");
-  context.fillStyle = background;
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  const W = canvas.width;
+  const H = canvas.height;
 
+  // Full-bleed AI Playground background.
+  const background = context.createLinearGradient(0, 0, W, H);
+  background.addColorStop(0, "#020817");
+  background.addColorStop(0.48, "#06142d");
+  background.addColorStop(1, "#13072f");
+  context.fillStyle = background;
+  context.fillRect(0, 0, W, H);
+
+  // Ambient cyan / violet glows.
+  const cyanGlow = context.createRadialGradient(80, 690, 0, 80, 690, 520);
+  cyanGlow.addColorStop(0, "rgba(34,211,238,.20)");
+  cyanGlow.addColorStop(1, "rgba(34,211,238,0)");
+  context.fillStyle = cyanGlow;
+  context.fillRect(0, 0, W, H);
+
+  const violetGlow = context.createRadialGradient(1120, 560, 0, 1120, 560, 560);
+  violetGlow.addColorStop(0, "rgba(168,85,247,.22)");
+  violetGlow.addColorStop(1, "rgba(168,85,247,0)");
+  context.fillStyle = violetGlow;
+  context.fillRect(0, 0, W, H);
+
+  // Soft technical grid.
+  context.save();
+  context.strokeStyle = "rgba(125,211,252,.045)";
+  context.lineWidth = 1;
+  for (let x = 0; x <= W; x += 90) {
+    context.beginPath();
+    context.moveTo(x, 0);
+    context.lineTo(x, H);
+    context.stroke();
+  }
+  for (let y = 0; y <= H; y += 90) {
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(W, y);
+    context.stroke();
+  }
+  context.restore();
+
+  // Main modern card — nearly full width by design.
+  const cardX = 54;
+  const cardY = 58;
+  const cardW = W - 108;
+  const cardH = H - 116;
+  context.save();
+  const cardGradient = context.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+  cardGradient.addColorStop(0, "rgba(8,28,58,.97)");
+  cardGradient.addColorStop(1, "rgba(7,17,43,.97)");
+  context.fillStyle = cardGradient;
+  context.strokeStyle = "rgba(96,165,250,.34)";
+  context.lineWidth = 2;
+  context.beginPath();
+  context.roundRect(cardX, cardY, cardW, cardH, 42);
+  context.fill();
+  context.stroke();
+  context.restore();
+
+  // Accent line at the top of the card.
+  const accent = context.createLinearGradient(cardX + 38, 0, cardX + cardW - 38, 0);
+  accent.addColorStop(0, "#22d3ee");
+  accent.addColorStop(0.52, "#3b82f6");
+  accent.addColorStop(1, "#a855f7");
+  context.fillStyle = accent;
+  context.beginPath();
+  context.roundRect(cardX + 38, cardY + 28, cardW - 76, 6, 4);
+  context.fill();
+
+  // Load and draw the exact OUSL logo supplied for this project.
   try {
     const logoImage = new window.Image();
     logoImage.src = ouslLogo.src;
     await logoImage.decode();
+
     context.save();
-    context.fillStyle = "#183f39";
+    context.fillStyle = "rgba(2,8,23,.82)";
+    context.strokeStyle = "rgba(245,158,11,.38)";
+    context.lineWidth = 2;
     context.beginPath();
-    context.arc(865, 150, 118, 0, Math.PI * 2);
+    context.roundRect(W - 300, 112, 176, 220, 28);
     context.fill();
-    context.beginPath();
-    context.arc(865, 150, 92, 0, Math.PI * 2);
-    context.clip();
-    drawContainedImage(context, logoImage, 773, 58, 184, 184);
+    context.stroke();
+    drawContainedImage(context, logoImage, W - 276, 128, 128, 188);
     context.restore();
   } catch {
-    // Keep the text branding if a browser blocks image decoding.
+    // Text branding below remains sufficient if decoding is blocked.
   }
 
-  context.fillStyle = "rgba(215, 241, 113, 0.14)";
+  // Header brand block.
+  context.fillStyle = "#67e8f9";
+  context.font = "800 22px Arial";
+  context.fillText("OUSL OPEN DAY 2026", 105, 145);
+  context.fillStyle = "#94a3b8";
+  context.font = "500 17px Arial";
+  context.fillText("AI Playground · Would You Rather?", 105, 176);
+
+  // Right-side category label.
+  context.fillStyle = "#c4b5fd";
+  context.font = "800 17px Arial";
+  context.textAlign = "right";
+  context.fillText("AI PERSONALITY BOOTH", W - 330, 145);
+  context.textAlign = "left";
+
+  // Player label pill.
+  const playerLabel = `${name}'s AI personality read`;
+  context.font = "700 18px Arial";
+  const playerWidth = Math.min(510, context.measureText(playerLabel).width + 46);
+  context.fillStyle = "rgba(34,211,238,.08)";
+  context.strokeStyle = "rgba(34,211,238,.30)";
+  context.lineWidth = 1.5;
   context.beginPath();
-  context.arc(890, 155, 150, 0, Math.PI * 2);
+  context.roundRect(105, 245, playerWidth, 50, 25);
   context.fill();
-  context.fillStyle = "rgba(255, 107, 87, 0.18)";
+  context.stroke();
+  context.fillStyle = "#bae6fd";
+  context.fillText(playerLabel, 128, 277);
+
+  // Result title with the same cyan → blue → violet identity as the web UI.
+  const titleGradient = context.createLinearGradient(105, 0, 960, 0);
+  titleGradient.addColorStop(0, "#38bdf8");
+  titleGradient.addColorStop(0.5, "#60a5fa");
+  titleGradient.addColorStop(1, "#c026d3");
+  context.fillStyle = titleGradient;
+  context.font = "800 78px Arial";
+  const titleLines = wrapCanvasText(context, summary.title, 860).slice(0, 3);
+  drawCanvasLines(context, titleLines, 105, 405, 86);
+
+  const titleBottom = 405 + Math.max(0, titleLines.length - 1) * 86;
+
+  // Main interpretation panel.
+  const panelY = titleBottom + 80;
+  context.fillStyle = "rgba(2,8,23,.34)";
+  context.strokeStyle = "rgba(148,163,184,.14)";
+  context.lineWidth = 1.5;
   context.beginPath();
-  context.arc(125, 1165, 105, 0, Math.PI * 2);
+  context.roundRect(105, panelY, W - 210, 500, 30);
+  context.fill();
+  context.stroke();
+
+  context.fillStyle = "#f8fafc";
+  context.font = "600 30px Arial";
+  const readLines = wrapCanvasText(context, summary.read, W - 300).slice(0, 6);
+  drawCanvasLines(context, readLines, 150, panelY + 80, 48);
+
+  const predictionY = panelY + 80 + readLines.length * 48 + 54;
+  const predictionBoxH = 155;
+  const predictionBg = context.createLinearGradient(145, 0, 1035, 0);
+  predictionBg.addColorStop(0, "rgba(34,211,238,.10)");
+  predictionBg.addColorStop(1, "rgba(139,92,246,.06)");
+  context.fillStyle = predictionBg;
+  context.beginPath();
+  context.roundRect(145, predictionY - 42, W - 290, predictionBoxH, 22);
   context.fill();
 
-  context.fillStyle = "#d7f171";
-  context.font = "700 25px Arial";
-  context.letterSpacing = "3px";
-  context.fillText("OUSL OPEN DAY 2026", 80, 95);
-  context.letterSpacing = "0px";
+  context.fillStyle = accent;
+  context.fillRect(145, predictionY - 42, 6, predictionBoxH);
+  context.fillStyle = "#cbd5e1";
+  context.font = "500 25px Arial";
+  const predictionLines = wrapCanvasText(context, summary.prediction, W - 370).slice(0, 4);
+  drawCanvasLines(context, predictionLines, 182, predictionY, 38);
 
-  context.fillStyle = "#fbf3e7";
-  context.font = "600 68px Georgia";
-  context.fillText("would you", 80, 200);
-  context.fillStyle = "#ffc857";
-  context.font = "italic 74px Georgia";
-  context.fillText("rather?", 80, 275);
+  // Footer section inside the card.
+  const footerY = H - 300;
+  context.strokeStyle = "rgba(148,163,184,.14)";
+  context.beginPath();
+  context.moveTo(105, footerY - 36);
+  context.lineTo(W - 105, footerY - 36);
+  context.stroke();
 
-  context.fillStyle = "#192741";
-  context.roundRect(60, 350, 960, 780, 36);
-  context.fill();
-  context.fillStyle = "#ff6b57";
-  context.fillRect(105, 405, 70, 7);
-  context.fillStyle = "#aab8d2";
-  context.font = "500 28px Arial";
-  context.fillText(`${name}'s AI personality read`, 105, 470);
+  context.fillStyle = "#f8fafc";
+  context.font = "800 24px Arial";
+  context.fillText("Thanks for playing!", 105, footerY);
 
-  context.fillStyle = "#ffc857";
-  context.font = "italic 600 56px Georgia";
-  const titleLines = wrapCanvasText(context, summary.title, 790).slice(0, 2);
-  drawCanvasLines(context, titleLines, 105, 575, 66);
+  context.fillStyle = "#94a3b8";
+  context.font = "500 18px Arial";
+  context.fillText("Department of Computer Science · Faculty of Natural Sciences", 105, footerY + 36);
+  context.fillText("The Open University of Sri Lanka", 105, footerY + 66);
 
-  const titleHeight = titleLines.length * 68;
-  context.fillStyle = "#fbf3e7";
-  context.font = "400 29px Arial";
-  const readLines = wrapCanvasText(context, summary.read, 820).slice(0, 4);
-  const readY = 690 + titleHeight;
-  drawCanvasLines(context, readLines, 105, readY, 43);
+  const footerGradient = context.createLinearGradient(105, 0, 650, 0);
+  footerGradient.addColorStop(0, "#22d3ee");
+  footerGradient.addColorStop(1, "#8b5cf6");
+  context.fillStyle = footerGradient;
+  context.font = "800 19px Arial";
+  context.fillText("MAKE YOUR CHOICE · GET YOUR AI READ", 105, footerY + 116);
 
-  const predictionY = readY + readLines.length * 43 + 46;
-  context.fillStyle = "#ff6b57";
-  context.fillRect(105, predictionY - 28, 6, 112);
-  context.fillStyle = "#aab8d2";
-  context.font = "500 27px Arial";
-  const predictionLines = wrapCanvasText(
-    context,
-    summary.prediction,
-    790,
-  ).slice(0, 3);
-  drawCanvasLines(context, predictionLines, 135, predictionY, 40);
-
-  context.fillStyle = "#fbf3e7";
-  context.font = "600 22px Arial";
-  context.fillText("Thanks for playing!", 80, 1160);
-  context.fillStyle = "#aab8d2";
-  context.font = "400 19px Arial";
-  context.fillText("Department of Computer Science", 80, 1190);
-  context.fillText("Faculty of Natural Sciences", 80, 1217);
-  context.fillStyle = "#3fbfad";
-  context.font = "700 24px Arial";
-  context.fillText("MAKE YOUR CHOICE. GET YOUR READ.", 80, 1260);
-  context.fillStyle = "rgba(251, 243, 231, 0.52)";
-  context.font = "400 16px Arial";
-  context.fillText("*Response is AI generated", 80, 1320);
+  context.fillStyle = "rgba(148,163,184,.62)";
+  context.font = "500 15px Arial";
+  context.fillText("*AI-generated personality result for entertainment at OUSL Open Day 2026", 105, footerY + 158);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) =>
         blob ? resolve(blob) : reject(new Error("Could not create card")),
       "image/png",
+      0.96,
     );
   });
 }
@@ -196,7 +295,9 @@ export default function GamePage() {
   const [timesSeenToday, setTimesSeenToday] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [aiQuestions, setAiQuestions] = useState<Question[] | null>(null);
+  const [nameError, setNameError] = useState(false);
   const aiPrefetchStarted = useRef(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [loadingStep, setLoadingStep] = useState(0);
   const loadingMessages = [
     "Checking your choices...",
@@ -257,7 +358,12 @@ export default function GamePage() {
   }, []);
 
   const startGame = useCallback(async () => {
-    const name = username.trim() || "Player One";
+    const name = username.trim();
+    if (!name) {
+      setNameError(true);
+      nameInputRef.current?.focus();
+      return;
+    }
     const recentKeys = JSON.parse(
       sessionStorage.getItem("ousl-recent-questions") || "[]",
     ) as string[];
@@ -377,6 +483,7 @@ export default function GamePage() {
     setSummary(null);
     setTimesSeenToday(null);
     setUsername("");
+    setNameError(false);
     setScreen("welcome");
   };
 
@@ -417,6 +524,19 @@ export default function GamePage() {
 
   return (
     <div className="stage">
+      <header className="game-shell-header">
+        <div className="brand-lockup">
+          <div>
+            <div className="brand-title"><span>AI</span> Would You Rather?</div>
+            <div className="brand-subtitle">Open Day Interactive Game</div>
+          </div>
+        </div>
+        <div className="header-center">
+          <span>THE OPEN UNIVERSITY OF SRI LANKA</span>
+          <small>Open Day 2026 · AI Playground</small>
+        </div>
+        <div className="event-pill"><CalendarDays size={15} /> Open Day 2026</div>
+      </header>
       {screen === "welcome" && (
         <div className="welcome">
           <div className="booth-kicker">
@@ -433,35 +553,50 @@ export default function GamePage() {
             <div className="ousl-logo-text">OPEN DAY 2026</div>
           </div>
           <div className="mark">
-            would you
+            WOULD YOU
             <br />
-            <em>rather?</em>
+            <em>RATHER?</em>
           </div>
           <div className="mark-note">
-            A tiny personality experiment with very big opinions.
+            <Sparkles size={15} /> AI Personality Booth
           </div>
           <div className="sub">
             Fifteen fun choices. No wrong answers. Get a simple AI personality
             result at the end.
           </div>
+          <div className={`name-field-wrap${nameError ? " error" : ""}`}>
+            <UserRound size={18} />
           <input
+            ref={nameInputRef}
             className="name-input"
             type="text"
             value={username}
             maxLength={24}
             placeholder="What should we call you?"
-            onChange={(e) => setUsername(e.target.value)}
+            required
+            aria-invalid={nameError}
+            aria-describedby={nameError ? "name-error" : undefined}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              if (nameError && e.target.value.trim()) setNameError(false);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") startGame();
             }}
           />
+          </div>
+          {nameError && (
+            <div className="name-error" id="name-error">
+              Please enter your name to start.
+            </div>
+          )}
           <div className="rules">
             <span className="pill">15 rounds</span>
             <span className="pill">~2 min</span>
             <span className="pill">no login</span>
           </div>
           <button className="start-btn" onClick={startGame}>
-            Start the game <span aria-hidden="true">-&gt;</span>
+            <Sparkles size={18} /> Start the game <ArrowRight size={18} />
           </button>
         </div>
       )}
@@ -485,14 +620,23 @@ export default function GamePage() {
           <div className="progress-row">
             <ProgressDots total={questions.length} done={index} />
           </div>
+          <div className="question-copy">
+            <div className="round-kicker">QUESTION {index + 1} OF {questions.length}</div>
+            <h1>Would you <span>rather?</span></h1>
+            <p>Choose the option that feels most like you. There are no wrong answers.</p>
+          </div>
           <div className="split">
             <div className="category-label">{questions[index].category}</div>
             <button className="opt a" onClick={() => choose("A")}>
-              {questions[index].optionA.text}
+              <span className="choice-badge">A</span>
+              <span className="choice-text">{questions[index].optionA.text}</span>
+              <span className="choice-hint">Choose A <ArrowRight size={16} /></span>
             </button>
             <div className="or-divider">OR</div>
             <button className="opt b" onClick={() => choose("B")}>
-              {questions[index].optionB.text}
+              <span className="choice-badge">B</span>
+              <span className="choice-text">{questions[index].optionB.text}</span>
+              <span className="choice-hint">Choose B <ArrowRight size={16} /></span>
             </button>
           </div>
           {usingFallback && (
